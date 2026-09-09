@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #f9f9f9;
+  color: #333;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+}
+
+/* Loading skeleton */
+.skeleton {
+  @apply bg-neutral-300 animate-pulse rounded-lg;
+}
+
+/* Smooth transitions */
+.transition-all {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+/* Button styles */
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer;
+}
+
+.btn-primary {
+  @apply btn bg-primary text-white hover:bg-orange-600 active:scale-95;
+}
+
+.btn-secondary {
+  @apply btn bg-secondary text-white hover:bg-blue-900 active:scale-95;
+}
+
+.btn-outline {
+  @apply btn border-2 border-primary text-primary hover:bg-orange-50 active:scale-95;
+}
+
+.btn-success {
+  @apply btn bg-success text-white hover:bg-green-700 active:scale-95;
+}
+
+.btn-danger {
+  @apply btn bg-danger text-white hover:bg-red-700 active:scale-95;
+}
+
+/* Card styles */
+.card {
+  @apply bg-white rounded-xl shadow-md p-6 transition-all duration-200;
+}
+
+.card-hover {
+  @apply card hover:shadow-lg hover:scale-105;
+}
+
+/* Input styles */
+.input {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200;
+}
+
+/* Form error */
+.error-text {
+  @apply text-danger text-sm mt-1;
+}
+
+/* Success state */
+.success-state {
+  @apply border-success focus:ring-success;
+}
+
+/* Disabled state */
+.disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
