@@ -1,0 +1,250 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String          @id @default(cuid())
+  email         String          @unique
+  name          String?
+  password      String
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Profile Info
+  profile       UserProfile?
+  sessions      Session[]
+  accounts      Account[]
+  
+  // Fitness Data
+  workoutPlans  WorkoutPlan[]
+  workouts      Workout[]
+  progressPhotos ProgressPhoto[]
+  nutrition     NutritionLog[]
+
+  @@map("users")
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model UserProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Personal Info
+  age               Int?
+  height            Int?      // in cm
+  weight            Float?    // in kg
+  
+  // Fitness Info
+  fitnessGoal       String?   // "general", "muscle_building", "strength", "endurance"
+  experienceLevel   String?   // "beginner", "intermediate", "advanced"
+  availableDays     Int?      // 3, 4, 5, 6, 7
+  availableEquipment String[]  // array of equipment names
+  
+  // Body Analysis
+  bodyAnalysis      BodyAnalysis?
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("user_profiles")
+}
+
+model BodyAnalysis {
+  id                String    @id @default(cuid())
+  userProfileId     String    @unique
+  userProfile       UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  
+  // Photos
+  frontPhotoUrl     String?
+  backPhotoUrl      String?
+  rightPhotoUrl     String?
+  leftPhotoUrl      String?
+  
+  // Analysis Results
+  postureAnalysis   String?   @db.Text  // JSON string with posture data
+  symmetryAnalysis  String?   @db.Text  // JSON string with symmetry data
+  trainingFocusAreas String[]  // array of focus areas
+  
+  // Metadata
+  analysisTimestamp DateTime?
+  aiProvider        String?   // "openai", "mock", etc.
+  confidence        Float?    // 0-1 confidence score
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("body_analyses")
+}
+
+model WorkoutPlan {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name            String
+  description     String?   @db.Text
+  goal            String    // fitness goal this plan targets
+  experienceLevel String    // difficulty level
+  daysPerWeek     Int
+  
+  workouts        Workout[]
+  
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("workout_plans")
+}
+
+model Workout {
+  id              String    @id @default(cuid())
+  workoutPlanId   String
+  workoutPlan     WorkoutPlan @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name            String    // e.g., "Chest & Triceps Day"
+  dayOfWeek       Int?      // 0-6, null for custom
+  description     String?   @db.Text
+  duration        Int?      // in minutes
+  
+  exercises       WorkoutExercise[]
+  completedWorkouts CompletedWorkout[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("workouts")
+}
+
+model WorkoutExercise {
+  id              String    @id @default(cuid())
+  workoutId       String
+  workout         Workout   @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exerciseId      String
+  exercise        Exercise  @relation(fields: [exerciseId], references: [id])
+  
+  order           Int       // exercise order in workout
+  sets            Int
+  reps            Int?      // null if duration is used
+  duration        Int?      // in seconds, null if reps used
+  restTime        Int       // in seconds
+  difficulty      String?   // can override exercise difficulty
+  notes           String?   @db.Text
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([workoutId, order])
+  @@map("workout_exercises")
+}
+
+model Exercise {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?   @db.Text
+  muscleGroup     String    // "chest", "back", "shoulders", "arms", "legs", "core", "full_body"
+  equipmentRequired String[]  // array of equipment
+  difficulty      String    // "beginner", "intermediate", "advanced"
+  instructions    String    @db.Text
+  defaultSets     Int
+  defaultReps     Int?
+  defaultDuration Int?      // in seconds
+  imageUrl        String?
+  videoUrl        String?
+  
+  workoutExercises WorkoutExercise[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("exercises")
+}
+
+model CompletedWorkout {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutId       String
+  workout         Workout   @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  
+  completedAt     DateTime
+  duration        Int?      // actual duration in minutes
+  notes           String?   @db.Text
+  exercisesCompleted Int
+  totalExercises  Int
+  
+  @@map("completed_workouts")
+}
+
+model ProgressPhoto {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  photoUrl        String
+  angle           String    // "front", "back", "right", "left", "custom"
+  notes           String?
+  
+  uploadedAt      DateTime  @default(now())
+  
+  @@map("progress_photos")
+}
+
+model NutritionLog {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  date            DateTime
+  calories        Float?
+  protein         Float?
+  carbs           Float?
+  fat             Float?
+  notes           String?   @db.Text
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("nutrition_logs")
+}
