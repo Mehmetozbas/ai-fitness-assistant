@@ -6,16 +6,16 @@ import { authOptions } from '@/lib/auth'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 
-const ProfileSchema = z.object({
-  age: z.number().min(15).max(100),
-  height: z.number().min(100).max(250),
-  weight: z.number().min(30).max(300),
-  fitnessGoal: z.enum(['general', 'muscle_building', 'strength', 'endurance']),
-  experienceLevel: z.enum(['beginner', 'intermediate', 'advanced']),
-  availableDays: z.number().min(1).max(7),
+const UpdateProfileSchema = z.object({
+  age: z.number().optional(),
+  height: z.number().optional(),
+  weight: z.number().optional(),
+  fitnessGoal: z.string().optional(),
+  experienceLevel: z.string().optional(),
+  availableDays: z.number().optional(),
 })
 
-export async function POST(request: NextRequest) {
+export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -23,16 +23,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const validatedData = ProfileSchema.parse(body)
+    const validatedData = UpdateProfileSchema.parse(body)
 
-    // Create or update user profile
-    const profile = await prisma.userProfile.upsert({
+    const profile = await prisma.userProfile.update({
       where: { userId: session.user.id },
-      update: validatedData,
-      create: {
-        userId: session.user.id,
-        ...validatedData,
-      },
+      data: validatedData,
     })
 
     return NextResponse.json({
@@ -47,7 +42,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.error('Profile update error:', error)
+    console.error('Update profile error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

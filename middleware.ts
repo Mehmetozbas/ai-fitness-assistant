@@ -1,21 +1,19 @@
-import { withAuth } from 'next-auth/middleware'
+import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
-export const middleware = withAuth(
-  function middleware(req) {
-    // Protect dashboard and other authenticated routes
-    if (!req.nextauth.token && req.nextUrl.pathname.startsWith('/dashboard')) {
-      return NextResponse.redirect(new URL('/auth/login', req.url))
-    }
+export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  
+  // Public routes
+  const publicRoutes = ['/', '/auth/login', '/auth/signup']
+  if (publicRoutes.includes(pathname)) {
     return NextResponse.next()
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => !!token,
-    },
   }
-)
+
+  // Protected routes - will be handled by NextAuth middleware in auth.ts
+  return NextResponse.next()
+}
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/onboarding/:path*', '/api/protected/:path*'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 }
